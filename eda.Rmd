@@ -1,0 +1,82 @@
+---
+title: "eda"
+output: md_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
+
+library(tidytable)
+library(tidyverse)
+library(modelr)
+library(factoextra)
+library(FactoMineR)
+library(lubridate)
+
+stocks <- read_csv("data/stock-portfolio.csv") %>% 
+  mutate(stock = as.factor(stock)) %>% 
+  select(-median_volume)
+
+# stocks <- read_csv("data/stocks.csv") %>%
+#   group_by(stock) %>%
+#   mutate(median_volume = median(volume)) %>%
+#   ungroup() %>%
+#   filter(median_volume > 3350000,
+#          year(date) > 1987) %>% 
+#   write_csv("data/stock-portfolio.csv")
+```
+
+## Data
+There are `r nrow(stocks)` observations in the dataset. They contain all stocks with a median daily volume of more than 3,350,000. The data is from Jan 1, 1988 until Nov 10, 2017. There are `r nrow(distinct(stocks, stock))` stocks in the portfolio.
+```{r}
+glimpse(stocks)
+summary(stocks)
+```
+
+## Model
+```{r}
+pca_stocks <- stocks %>% 
+  filter(date == ymd("2017-03-02")) %>% 
+  select(-date) %>% 
+  column_to_rownames(var = "stock") %>% 
+  PCA() 
+
+pca_stocks %>% summary
+
+pca_stocks
+
+stock_names <- stocks %>% 
+  filter(date == ymd("2017-03-02")) %>% 
+  distinct(stock) %>% 
+  mutate(stock = as.character(stock)) %>% 
+  pull(stock)
+
+#pca_stocks$ind
+as_tibble(pca_stocks$ind) %>% 
+  mutate(stock = stock_names) %>% 
+  select(stock, everything()) %>% 
+  janitor::clean_names() %>% 
+  arrange(desc(dist)) %>% 
+  select(stock, dist) 
+
+```
+
+
+Testing ancova
+```{r include=FALSE, eval=FALSE}
+contrasts(stocks$stock)
+anco <- stocks %>% head(10000) %>% 
+  aov(close~stock*stock, .) %>%
+  car::Anova(mod = ., type = 2)
+
+tempstocks %>% 
+  filter(date == ymd("2017-03-02")) %>% 
+  select(-date) %>% 
+  column_to_rownames(var = "stock") %>% 
+  princomp(.) %>%
+  summary
+
+
+```
