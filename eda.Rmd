@@ -61,8 +61,16 @@ as_tibble(pca_stocks$ind) %>%
   arrange(desc(dist)) %>% 
   select(stock, dist) 
 
+pca_stocks$ind$contrib %>% 
+  as_tibble() %>% 
+  mutate(stock = stock_names) %>% 
+  select(stock, everything()) %>% 
+  janitor::clean_names() %>% 
+  mutate(sum = dim_1 + dim_2 + dim_3 + dim_4 + dim_5) %>% 
+  arrange(desc(sum)) %>% 
+  select(sum, stock, everything()) 
 ```
-
+Unsure of what the best way to measure which stocks are contributing the most is; last 2 outputs are possibities. 
 
 Testing ancova
 ```{r include=FALSE, eval=FALSE}
