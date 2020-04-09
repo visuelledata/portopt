@@ -268,8 +268,94 @@ values over time for each of these stocks.
       group_by(stock) %>% 
       mutate(max_value = max(value)) %>% 
       ungroup() %>% 
-      filter(max_value >= 10) %>% 
+      filter(max_value >= 11) %>% 
       ggplot(aes(date, value)) + 
       geom_line(aes(color = name))# + theme(legend.position = "none")
 
 ![](eda_files/figure-markdown_strict/unnamed-chunk-4-2.png)
+
+    portfolio_pre %>% 
+      arrange(date) %>% 
+      mutate(date = floor_date(date, unit = "weeks")) %>%
+      group_by(date, stock) %>% 
+      summarize(value = mean(value)) %>% 
+      ungroup() %>% 
+      arrange(desc(value)) %>% 
+      arrange(date) %>% 
+      group_by(date) %>% 
+      mutate(rownum = row_number(date)) %>% 
+      ungroup() %>% 
+      filter(rownum <= 5) %>% #distinct(stock) %>% 
+      left_join(tickers, by = c("stock" = "symbol")) %>% 
+      group_by(stock) %>% 
+      mutate(max_value = max(value)) %>% 
+      ungroup() %>% 
+      mutate(name = if_else(max_value > 11, name, "Not in top 12."), 
+             cond = if_else(max_value > 11, TRUE, FALSE)) %>% 
+      group_by(name) %>% 
+      mutate(n = sum(!is.na(name))) %>%
+      ungroup() %>% 
+      mutate(name = if_else(is.na(name), stock, name), 
+             name = as.factor(name)) %>% 
+      ggplot(aes(date, value)) + 
+      geom_line(aes(color = fct_reorder(name, n), 
+                    alpha = !cond)) +
+      geom_line(aes(color = fct_reorder(name, n),
+                    alpha = cond)) +
+      scale_color_manual(values = c(RColorBrewer::brewer.pal(12, "Set3"), "Grey60")) + 
+      hrbrthemes::theme_ipsum()
+
+    ## Warning: Using alpha for a discrete variable is not advised.
+
+    ## Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font
+    ## family not found in Windows font database
+
+    ## Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font
+    ## family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font
+    ## family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call.graphics(C_text, as.graphicsAnnot(x$label), x$x,
+    ## x$y, : font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+    ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
+    ## font family not found in Windows font database
+
+![](eda_files/figure-markdown_strict/unnamed-chunk-4-3.png)
