@@ -90,7 +90,7 @@ Let's look at one of the days, `r df_models[][400] %>% pull(date) %>% as.charact
 ```{r}
 
 df_models$pca_model[[400]] %>% 
-  plot()
+  
   
 ```
 
