@@ -32,15 +32,32 @@ with a median daily volume of more than 3,350,000. The data is from Jan
     ## $ open_int [3m[38;5;246m<dbl>[39m[23m 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,...
     ## $ stock    [3m[38;5;246m<fct>[39m[23m a.us, a.us, a.us, a.us, a.us, a.us, a.us, a.us, a.us,...
 
-    summary(stocks)
+    summary(stocks) 
 
     ##       date                 open                high          
     ##  Min.   :1988-01-04   Min.   :   0.0384   Min.   :   0.0579  
+    ##  1st Qu.:2001-03-08   1st Qu.:   7.7291   1st Qu.:   7.8512  
+    ##  Median :2008-07-09   Median :  16.9610   Median :  17.2130  
+    ##  Mean   :2006-11-02   Mean   :  26.5654   Mean   :  26.8993  
+    ##  3rd Qu.:2013-06-21   3rd Qu.:  32.5020   3rd Qu.:  32.9190  
+    ##  Max.   :2017-11-10   Max.   :1126.1000   Max.   :1135.5400  
+    ##                                                              
     ##       low               close               volume             open_int
     ##  Min.   :   0.000   Min.   :   0.0579   Min.   :0.000e+00   Min.   :0  
+    ##  1st Qu.:   7.601   1st Qu.:   7.7292   1st Qu.:3.714e+06   1st Qu.:0  
+    ##  Median :  16.698   Median :  16.9590   Median :6.762e+06   Median :0  
+    ##  Mean   :  26.216   Mean   :  26.5635   Mean   :1.331e+07   Mean   :0  
+    ##  3rd Qu.:  32.073   3rd Qu.:  32.5000   3rd Qu.:1.323e+07   3rd Qu.:0  
+    ##  Max.   :1124.060   Max.   :1132.8800   Max.   :2.424e+09   Max.   :0  
+    ##                                                                        
     ##      stock       
     ##  t.us   :  7528  
-    ##  [ reached getOption("max.print") -- omitted 6 rows ]
+    ##  abt.us :  7527  
+    ##  adbe.us:  7527  
+    ##  amd.us :  7527  
+    ##  axp.us :  7527  
+    ##  bby.us :  7527  
+    ##  (Other):958921
 
 PCA
 ---

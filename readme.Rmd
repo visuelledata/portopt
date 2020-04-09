@@ -1,0 +1,33 @@
+---
+title: "readme"
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA here
+https://github.com/visuelledata/portopt/blob/master/eda.md
+[Unrendered version](https://github.com/visuelledata/portopt/blob/master/eda.Rmd)
+
+## Data stored here:
+https://github.com/visuelledata/portopt/tree/master/data
+Only processed data is available there. For original, message me or see the links below. 
+
+## Data sources
+https://datahub.io/core/s-and-p-500-companies-financials#r
+https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs/data#
+
+
+https://github.com/kassambara/factoextra
+
+### Ticker Symbols
+**NASDAQ**
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download
+
+**AMEX**
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=amex&render=download
+
+**NYSE**
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download
