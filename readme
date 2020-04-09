@@ -3,3 +3,14 @@ https://www.kaggle.com/borismarjanovic/price-volume-data-for-all-us-stocks-etfs/
 
 
 https://github.com/kassambara/factoextra
+
+#Ticker Symbols
+NASDAQ
+
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download
+AMEX
+
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=amex&render=download
+NYSE
+
+https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nyse&render=download

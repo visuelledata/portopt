@@ -8,12 +8,22 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
 
+options(max.print = 10)
+
 library(tidytable)
 library(tidyverse)
 library(modelr)
 library(factoextra)
 library(FactoMineR)
 library(lubridate)
+
+tickers <- 
+  list.files("data/tickersymbols", full.names = TRUE) %>% 
+  map_df(~read_csv(.x)) %>% 
+  janitor::clean_names() %>% 
+  select(symbol, name, sector, industry) %>% 
+  mutate(symbol = str_to_lower(symbol)) %>% 
+  distinct()
 
 stocks <- read_csv("data/stock-portfolio.csv") %>% 
   mutate(stock = as.factor(stock)) %>% 
@@ -26,65 +36,102 @@ stocks <- read_csv("data/stock-portfolio.csv") %>%
 #   filter(median_volume > 3350000,
 #          year(date) > 1987) %>% 
 #   write_csv("data/stock-portfolio.csv")
-```
 
+# Performs PCA
+nested_stocks <- stocks %>% 
+  mutate(stock = str_remove(stock, ".us$")) %>%
+  select(-open_int) %>% 
+  group_by(date) %>% 
+  nest()
+
+df_models <- nested_stocks %>% 
+  dt_mutate(rankings = map(data,
+                         function(.x){
+                           .x %>% 
+                             dt_mutate_if(is.double, ~ .x / sum(.x)) %>%
+                             column_to_rownames(var = "stock") %>% 
+                             PCA(graph = FALSE) %>% 
+                             magrittr::use_series(ind) %>% 
+                             magrittr::use_series(dist) %>% 
+                             enframe()
+                         })) %>% 
+  dt_mutate(pca_model = map(data,
+                         function(.x){
+                           .x %>% 
+                             dt_mutate_if(is.double, ~ .x / sum(.x)) %>%
+                             column_to_rownames(var = "stock") %>% 
+                             PCA(graph = FALSE)
+                         })) 
+```
+So for this project, we're investigating the use of Principle Component Analysis, PCA, and it's uses in making a portfolio. 
+
+Why? To reduce the risk of a portfolio. Reducing the number of stocks in the porfolio helps to reduce the covariance between stocks, which also reduces the correlations between stocks. This helps to reduce the overall risk of the portfolio. 
+
+## What is PCA? 
+
+# Using PCA on our data
 ## Data
-There are `r nrow(stocks)` observations in the dataset. They contain all stocks with a median daily volume of more than 3,350,000. The data is from Jan 1, 1988 until Nov 10, 2017. There are `r nrow(distinct(stocks, stock))` stocks in the portfolio.
+There are `r nrow(stocks)` observations in our dataset. They contain all stocks with a median daily volume of more than 3,350,000. The data is from Jan 1, 1988 until Nov 10, 2017. There are `r nrow(distinct(stocks, stock))` stocks in the portfolio.
 ```{r}
 glimpse(stocks)
 summary(stocks)
 ```
 
-## Model
+## PCA
+PCA assumes that the data is in the form of a matrix, and it requires there is a single stock per row. Since our data is 30 years of stock prices with `r nrow(distinct(stocks, stock))` stocks, we chose to perform PCA on every day and then aggregate the results of the PCA rather than aggregating the data and then performing PCA. 
+
+When applied to the entire dataset, it is applied to each of the `r nrow(distinct(stocks, rows))` days in the dataset. 
+
+Let's look at one of the days, `r df_models[][400] %>% pull(date) %>% as.character()`: 
 ```{r}
-pca_stocks <- stocks %>% 
-  filter(date == ymd("2017-03-02")) %>% 
-  select(-date) %>% 
-  column_to_rownames(var = "stock") %>% 
-  PCA() 
 
-pca_stocks %>% summary
-
-pca_stocks
-
-stock_names <- stocks %>% 
-  filter(date == ymd("2017-03-02")) %>% 
-  distinct(stock) %>% 
-  mutate(stock = as.character(stock)) %>% 
-  pull(stock)
-
-#pca_stocks$ind
-as_tibble(pca_stocks$ind) %>% 
-  mutate(stock = stock_names) %>% 
-  select(stock, everything()) %>% 
-  janitor::clean_names() %>% 
-  arrange(desc(dist)) %>% 
-  select(stock, dist) 
-
-pca_stocks$ind$contrib %>% 
-  as_tibble() %>% 
-  mutate(stock = stock_names) %>% 
-  select(stock, everything()) %>% 
-  janitor::clean_names() %>% 
-  mutate(sum = dim_1 + dim_2 + dim_3 + dim_4 + dim_5) %>% 
-  arrange(desc(sum)) %>% 
-  select(sum, stock, everything()) 
+df_models$pca_model[[400]] %>% 
+  plot()
+  
 ```
-Unsure of what the best way to measure which stocks are contributing the most is; last 2 outputs are possibities. 
 
-Testing ancova
-```{r include=FALSE, eval=FALSE}
-contrasts(stocks$stock)
-anco <- stocks %>% head(10000) %>% 
-  aov(close~stock*stock, .) %>%
-  car::Anova(mod = ., type = 2)
+Below, are the top 10 companies that are most representative of the companies over those `r nrow(distinct(stocks, rows))` days.
+```{r}
 
-tempstocks %>% 
-  filter(date == ymd("2017-03-02")) %>% 
-  select(-date) %>% 
-  column_to_rownames(var = "stock") %>% 
-  princomp(.) %>%
-  summary
+# Each stock with a value everyday 
+portfolio_pre <- df_models %>% 
+  select(-pca_model) %>% 
+  unnest(c(data, rankings)) %>% 
+  select(-name) %>% 
+  arrange(desc(value))
 
-
+portfolio_pre %>% 
+  group_by(stock) %>% 
+  summarize(mean_value = mean(value)) %>% 
+  arrange(desc(mean_value)) %>% 
+  head(10) %>% 
+  left_join(tickers, by = c("stock" = "symbol")) %>% 
+  select(name, mean_value) %>% 
+  knitr::kable()
 ```
+
+
+There are 73 different stocks that have appeared among each week's top 5 stocks, between `r stocks %>% pull(date) %>% min()` and `r stocks %>% pull(date) %>% max()`. Below are the are the PCA values over time for each of these stocks. 
+
+```{r}
+portfolio_pre %>% 
+  arrange(date) %>% 
+  mutate(date = floor_date(date, unit = "weeks")) %>%
+  group_by(date, stock) %>% 
+  summarize(value = mean(value)) %>% 
+  ungroup() %>% 
+  arrange(desc(value)) %>% 
+  arrange(date) %>% 
+  group_by(date) %>% 
+  mutate(rownum = row_number(date)) %>% 
+  ungroup() %>% 
+  filter(rownum <= 10) %>% # Change this number to get the top X stocks on each day
+  left_join(tickers, by = c("stock" = "symbol")) %>% 
+  select(date, everything()) %>% 
+  filter(rownum <= 5) %>% #distinct(stock) %>%  
+  ggplot(aes(date, value)) + 
+  geom_line(aes(color = stock))# + theme(legend.position = "none")
+```
+
+
+
