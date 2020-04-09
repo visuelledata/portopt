@@ -17,13 +17,16 @@ library(factoextra)
 library(FactoMineR)
 library(lubridate)
 
-tickers <- 
-  list.files("data/tickersymbols", full.names = TRUE) %>% 
-  map_df(~read_csv(.x)) %>% 
-  janitor::clean_names() %>% 
-  select(symbol, name, sector, industry) %>% 
-  mutate(symbol = str_to_lower(symbol)) %>% 
-  distinct()
+# tickers <- 
+#   list.files("data/tickersymbols", full.names = TRUE) %>% 
+#   map_df(~read_csv(.x)) %>% 
+#   janitor::clean_names() %>% 
+#   select(symbol, name, sector, industry) %>% 
+#   mutate(symbol = str_to_lower(symbol)) %>% 
+#   distinct() %>% 
+#   write_csv("data/ticker_symbols.csv")
+
+tickers <- read_csv("data/ticker_symbols.csv")
 
 stocks <- read_csv("data/stock-portfolio.csv") %>% 
   mutate(stock = as.factor(stock)) %>% 
