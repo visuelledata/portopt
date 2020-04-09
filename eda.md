@@ -68,18 +68,96 @@ prices with 239 stocks, we chose to perform PCA on every day and then
 aggregate the results of the PCA rather than aggregating the data and
 then performing PCA.
 
-When applied to the entire dataset, it is applied to each of the 1004084
+When applied to the entire dataset, it is applied to each of the 7528
 days in the dataset.
 
 Let’s look at one of the days, 2001-06-21:
 
     df_models$pca_model[[400]] %>% 
-      plot()
+      fviz_contrib(choice = "ind", axes = 1:5)
 
 ![](eda_files/figure-markdown_strict/unnamed-chunk-2-1.png)
 
+    df_models$pca_model[[400]] %>% 
+      get_pca_var() %>% 
+      magrittr::use_series("cor") %>% 
+      knitr::kable()
+
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th style="text-align: right;">Dim.1</th>
+<th style="text-align: right;">Dim.2</th>
+<th style="text-align: right;">Dim.3</th>
+<th style="text-align: right;">Dim.4</th>
+<th style="text-align: right;">Dim.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>open</td>
+<td style="text-align: right;">0.9976061</td>
+<td style="text-align: right;">0.0645933</td>
+<td style="text-align: right;">0.0224569</td>
+<td style="text-align: right;">-0.0095027</td>
+<td style="text-align: right;">0.0038894</td>
+</tr>
+<tr class="even">
+<td>high</td>
+<td style="text-align: right;">0.9973491</td>
+<td style="text-align: right;">0.0702096</td>
+<td style="text-align: right;">-0.0156850</td>
+<td style="text-align: right;">-0.0094283</td>
+<td style="text-align: right;">-0.0055200</td>
+</tr>
+<tr class="odd">
+<td>low</td>
+<td style="text-align: right;">0.9975985</td>
+<td style="text-align: right;">0.0661615</td>
+<td style="text-align: right;">0.0155092</td>
+<td style="text-align: right;">0.0128894</td>
+<td style="text-align: right;">-0.0036446</td>
+</tr>
+<tr class="even">
+<td>close</td>
+<td style="text-align: right;">0.9972998</td>
+<td style="text-align: right;">0.0695271</td>
+<td style="text-align: right;">-0.0222417</td>
+<td style="text-align: right;">0.0060421</td>
+<td style="text-align: right;">0.0052785</td>
+</tr>
+<tr class="odd">
+<td>volume</td>
+<td style="text-align: right;">-0.2811439</td>
+<td style="text-align: right;">0.9596656</td>
+<td style="text-align: right;">0.0001781</td>
+<td style="text-align: right;">0.0000030</td>
+<td style="text-align: right;">0.0000109</td>
+</tr>
+</tbody>
+</table>
+
+    df_models$pca_model[[400]] %>%
+      fviz_screeplot()
+
+![](eda_files/figure-markdown_strict/unnamed-chunk-2-2.png)
+
+    # df_models$pca_model[[400]] %>% Further inquiry needed
+    #   fviz_cos2("ind")
+
+    df_models$pca_model[[400]] %>%
+      fviz_pca_ind()
+
+![](eda_files/figure-markdown_strict/unnamed-chunk-2-3.png)
+
+    df_models$pca_model[[400]] %>%
+      fviz_pca_var()
+
+![](eda_files/figure-markdown_strict/unnamed-chunk-2-4.png)
+
 Below, are the top 10 companies that are most representative of the
-companies over those 1004084 days.
+companies over those 7528 days.
 
     # Each stock with a value everyday 
     portfolio_pre <- df_models %>% 
@@ -171,3 +249,27 @@ values over time for each of these stocks.
       geom_line(aes(color = stock))# + theme(legend.position = "none")
 
 ![](eda_files/figure-markdown_strict/unnamed-chunk-4-1.png)
+
+    portfolio_pre %>% 
+      arrange(date) %>% 
+      mutate(date = floor_date(date, unit = "weeks")) %>%
+      group_by(date, stock) %>% 
+      summarize(value = mean(value)) %>% 
+      ungroup() %>% 
+      arrange(desc(value)) %>% 
+      arrange(date) %>% 
+      group_by(date) %>% 
+      mutate(rownum = row_number(date)) %>% 
+      ungroup() %>% 
+      filter(rownum <= 10) %>% # Change this number to get the top X stocks on each day
+      left_join(tickers, by = c("stock" = "symbol")) %>% 
+      select(date, everything()) %>% 
+      filter(rownum <= 5) %>% #distinct(stock) %>%  
+      group_by(stock) %>% 
+      mutate(max_value = max(value)) %>% 
+      ungroup() %>% 
+      filter(max_value >= 10) %>% 
+      ggplot(aes(date, value)) + 
+      geom_line(aes(color = name))# + theme(legend.position = "none")
+
+![](eda_files/figure-markdown_strict/unnamed-chunk-4-2.png)

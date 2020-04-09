@@ -84,17 +84,33 @@ summary(stocks)
 ## PCA
 PCA assumes that the data is in the form of a matrix, and it requires there is a single stock per row. Since our data is 30 years of stock prices with `r nrow(distinct(stocks, stock))` stocks, we chose to perform PCA on every day and then aggregate the results of the PCA rather than aggregating the data and then performing PCA. 
 
-When applied to the entire dataset, it is applied to each of the `r nrow(distinct(stocks, rows))` days in the dataset. 
+When applied to the entire dataset, it is applied to each of the `r nrow(distinct(stocks, date))` days in the dataset. 
 
 Let's look at one of the days, `r df_models[][400] %>% pull(date) %>% as.character()`: 
 ```{r}
-
 df_models$pca_model[[400]] %>% 
+  fviz_contrib(choice = "ind", axes = 1:5)
   
-  
+df_models$pca_model[[400]] %>% 
+  get_pca_var() %>% 
+  magrittr::use_series("cor") %>% 
+  knitr::kable()
+
+df_models$pca_model[[400]] %>%
+  fviz_screeplot()
+
+# df_models$pca_model[[400]] %>% Further inquiry needed
+#   fviz_cos2("ind")
+
+df_models$pca_model[[400]] %>%
+  fviz_pca_ind()
+
+df_models$pca_model[[400]] %>%
+  fviz_pca_var()
+
 ```
 
-Below, are the top 10 companies that are most representative of the companies over those `r nrow(distinct(stocks, rows))` days.
+Below, are the top 10 companies that are most representative of the companies over those `r nrow(distinct(stocks, date))` days.
 ```{r}
 
 # Each stock with a value everyday 
@@ -135,6 +151,28 @@ portfolio_pre %>%
   filter(rownum <= 5) %>% #distinct(stock) %>%  
   ggplot(aes(date, value)) + 
   geom_line(aes(color = stock))# + theme(legend.position = "none")
+
+portfolio_pre %>% 
+  arrange(date) %>% 
+  mutate(date = floor_date(date, unit = "weeks")) %>%
+  group_by(date, stock) %>% 
+  summarize(value = mean(value)) %>% 
+  ungroup() %>% 
+  arrange(desc(value)) %>% 
+  arrange(date) %>% 
+  group_by(date) %>% 
+  mutate(rownum = row_number(date)) %>% 
+  ungroup() %>% 
+  filter(rownum <= 10) %>% # Change this number to get the top X stocks on each day
+  left_join(tickers, by = c("stock" = "symbol")) %>% 
+  select(date, everything()) %>% 
+  filter(rownum <= 5) %>% #distinct(stock) %>%  
+  group_by(stock) %>% 
+  mutate(max_value = max(value)) %>% 
+  ungroup() %>% 
+  filter(max_value >= 10) %>% 
+  ggplot(aes(date, value)) + 
+  geom_line(aes(color = name))# + theme(legend.position = "none")
 ```
 
 
