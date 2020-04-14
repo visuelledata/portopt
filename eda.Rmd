@@ -16,6 +16,7 @@ library(modelr)
 library(factoextra)
 library(FactoMineR)
 library(lubridate)
+library(hrbrthemes)
 
 # tickers <- 
 #   list.files("data/tickersymbols", full.names = TRUE) %>% 
@@ -89,8 +90,9 @@ When applied to the entire dataset, it is applied to each of the `r nrow(distinc
 Let's look at one of the days, `r df_models[][400] %>% pull(date) %>% as.character()`: 
 ```{r}
 df_models$pca_model[[400]] %>% 
-  fviz_contrib(choice = "ind", axes = 1:5)
-  
+  fviz_contrib(choice = "ind", axes = 1:5) + 
+  theme(axis.text.x = element_text(size = 7, angle = 90))
+
 df_models$pca_model[[400]] %>% 
   get_pca_var() %>% 
   magrittr::use_series("cor") %>% 
@@ -103,11 +105,10 @@ df_models$pca_model[[400]] %>%
 #   fviz_cos2("ind")
 
 df_models$pca_model[[400]] %>%
-  fviz_pca_ind()
+  fviz_pca_ind() 
 
 df_models$pca_model[[400]] %>%
-  fviz_pca_var()
-
+  fviz_pca_var(repel = TRUE)
 ```
 
 Below, are the top 10 companies that are most representative of the companies over those `r nrow(distinct(stocks, date))` days.
@@ -143,14 +144,21 @@ portfolio_pre %>%
   arrange(desc(value)) %>% 
   arrange(date) %>% 
   group_by(date) %>% 
-  mutate(rownum = row_number(date)) %>% 
+  mutate(rownum = row_number(date), 
+         stock = str_to_upper(stock)) %>% 
   ungroup() %>% 
   filter(rownum <= 10) %>% # Change this number to get the top X stocks on each day
   left_join(tickers, by = c("stock" = "symbol")) %>% 
   select(date, everything()) %>% 
   filter(rownum <= 5) %>% #distinct(stock) %>%  
   ggplot(aes(date, value)) + 
-  geom_line(aes(color = stock))# + theme(legend.position = "none")
+  geom_line(aes(color = stock)) + 
+  labs(title = "Weekly mean PCA values over time",
+       x = "Date", 
+       y = "Week's average PCA value", 
+       color = "Stocks") + 
+  theme(legend.position = "none") + 
+  theme_ipsum()
 
 portfolio_pre %>% 
   arrange(date) %>% 
@@ -172,7 +180,14 @@ portfolio_pre %>%
   ungroup() %>% 
   filter(max_value >= 11) %>% 
   ggplot(aes(date, value)) + 
-  geom_line(aes(color = name))# + theme(legend.position = "none")
+  geom_line(aes(color = name)) + 
+  labs(title = "PCA Top 12: Weekly mean PCA values over time",
+       x = "Date", 
+       y = "Weekly average PCA value", 
+       color = "Stocks") + 
+  theme(legend.position = "none") + 
+  theme_ipsum()
+
 
 
 
@@ -187,25 +202,30 @@ portfolio_pre %>%
   group_by(date) %>% 
   mutate(rownum = row_number(date)) %>% 
   ungroup() %>% 
-  filter(rownum <= 5) %>% #distinct(stock) %>% 
   left_join(tickers, by = c("stock" = "symbol")) %>% 
   group_by(stock) %>% 
   mutate(max_value = max(value)) %>% 
   ungroup() %>% 
   mutate(name = if_else(max_value > 11, name, "Not in top 12."), 
-         cond = if_else(max_value > 11, TRUE, FALSE)) %>% 
+         cond = if_else(max_value > 11, TRUE, FALSE), 
+         stock = str_to_upper(stock)) %>% 
   group_by(name) %>% 
   mutate(n = sum(!is.na(name))) %>%
   ungroup() %>% 
   mutate(name = if_else(is.na(name), stock, name), 
          name = as.factor(name)) %>% 
-  ggplot(aes(date, value)) + 
-  geom_line(aes(color = fct_reorder(name, n), 
-                alpha = !cond)) +
-  geom_line(aes(color = fct_reorder(name, n),
-                alpha = cond)) +
-  scale_color_manual(values = c(RColorBrewer::brewer.pal(12, "Set3"), "Grey60")) + 
-  hrbrthemes::theme_ipsum()
+  ggplot(aes(date, value, color = fct_reorder(name, n))) + 
+  geom_line(aes(alpha = !cond), show.legend = FALSE) +
+  geom_line(aes(alpha = cond)) +
+  guides(alpha = FALSE) + 
+  scale_color_manual(values = c("#006E82", "#8214A0", "#005AC8", "#00A0FA", "#FA78FA", "#14D2DC", "#AA0A3C", "#0A9B4B", "#FF825F", "#EAD644", "#A0FA82", "grey20", "grey92")) + 
+  labs(title = "PCA Top 12: Weekly mean PCA values over time",
+       x = "Date", 
+       y = "Weekly average PCA value", 
+       color = "Stocks") + 
+  theme_ipsum()
+
+#c("000000", "006E82", "8214A0", "005AC8", "00A0FA", "FA78FA", "14D2DC", "AA0A3C", "0A9B4B", "FF825F", "EAD644", "A0FA82", "FAE6BE")
 ```
 
 
